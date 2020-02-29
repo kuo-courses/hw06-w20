@@ -1,0 +1,1306 @@
+(* Content-type: application/mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 7.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       145,          7]
+NotebookDataLength[     44240,       1298]
+NotebookOptionsPosition[     38643,       1199]
+NotebookOutlinePosition[     39094,       1219]
+CellTagsIndexPosition[     39051,       1216]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell["Two-D Anthropomorphic Walking Model", "Title",
+ CellChangeTimes->{{3.760668205606097*^9, 
+  3.760668211878323*^9}},ExpressionUUID->"f1dbaf60-66e6-4d95-993c-\
+a6ad6d8463e2"],
+
+Cell["Two segment system, rolls on curved feet", "Subsubtitle",ExpressionUUID->"e61bdc07-da12-4a64-bc44-d61af29606cf"],
+
+Cell[CellGroupData[{
+
+Cell["Initialization", "Subsection",ExpressionUUID->"df71ce42-db1f-4858-897a-41c76dd38a07"],
+
+Cell[BoxData[
+ RowBox[{"Needs", "[", "\"\<DynamicsWorkbench`\>\"", "]"}]], "Input",Expressio\
+nUUID->"20775239-667d-4356-a865-3b939a3d4150"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Equations of Motion", "Subsection",ExpressionUUID->"bccb1bc4-016b-4f3f-ac17-892e7e57abf2"],
+
+Cell["Degrees of freedom: stance: u[1], swing: u[2]", "Text",
+ CellChangeTimes->{{3.476656042428906*^9, 
+  3.476656050278648*^9}},ExpressionUUID->"dc0396ac-35ff-4961-a759-\
+db1bab4c5e91"],
+
+Cell["\<\
+Start a new model. Add the first body, which is the stance leg, which is \
+attached to the ground with a hinge joint for now (we will eventually change \
+this, but a hinge joint is close to the same situation as having a curved \
+foot rolling on the ground). The mass and moment of inertia are specified, as \
+are two vectors: InbToJnt is the vector from the center of mass of the \
+inboard joint (ground) to the new body, and BodyToJnt is the vector from the \
+new body's center of mass to the same joint.\
+\>", "Text",ExpressionUUID->"2e79acd1-d4b0-42b7-9eb1-f07607340284"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"NewModel", "[", "]"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"AddBody", "[", 
+   RowBox[{"sta", ",", " ", "ground", ",", " ", "Hinge", ",", " ", 
+    RowBox[{"Axis", "->", 
+     RowBox[{"ground", "[", "3", "]"}]}], ",", 
+    RowBox[{"Mass", "->", "M"}], ",", 
+    RowBox[{"Inertia", "->", 
+     RowBox[{"{", 
+      RowBox[{"0", ",", "0", ",", "Il"}], "}"}]}], ",", 
+    RowBox[{"InbToJnt", "->", "0"}], ",", 
+    RowBox[{"BodyToJnt", "->", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"-", 
+        RowBox[{"(", 
+         RowBox[{"C", "-", "R"}], ")"}]}], " ", 
+       RowBox[{"sta", "[", "2", "]"}]}], "-", 
+      RowBox[{"R", " ", 
+       RowBox[{"ground", "[", "2", "]"}]}]}]}]}], "]"}], ";"}]}], "Input",Expr\
+essionUUID->"92ce9bde-fb51-411e-9f73-e5f2b37e6c39"],
+
+Cell["\<\
+Since a hinge joint is not the same as a curved foot, we need to make sure \
+that the acceleration of the center of mass is correct. After AddBody, that \
+acceleration, AccCOM[sta], is automatically defined and is correct for the \
+hinge joint. The following command explicitly sets the acceleration to what \
+it should be for the curved foot.\
+\>", "Text",ExpressionUUID->"018e1e87-69dc-4eb3-a4ad-88f6959ee963"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"AccCOM", "[", "sta", "]"}], " ", "=", " ", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"-", "R"}], " ", 
+     RowBox[{
+      RowBox[{"u", "[", "1", "]"}], "'"}], " ", 
+     RowBox[{"ground", "[", "1", "]"}]}], " ", "+", " ", 
+    RowBox[{
+     RowBox[{"AngAcc", "[", "sta", "]"}], " ", "\[Cross]", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"(", 
+        RowBox[{"C", "-", "R"}], ")"}], " ", 
+       RowBox[{"sta", "[", "2", "]"}]}], ")"}]}], " ", "+", " ", 
+    RowBox[{
+     RowBox[{"AngVel", "[", "sta", "]"}], " ", "\[Cross]", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{"AngVel", "[", "sta", "]"}], " ", "\[Cross]", " ", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], " ", 
+         RowBox[{"sta", "[", "2", "]"}]}], ")"}]}], ")"}]}]}]}], 
+  ";"}]], "Input",ExpressionUUID->"f2b10476-bcef-4bd6-a77e-e6b8b18b3fac"],
+
+Cell["\<\
+Now add the pelvis to the stance leg, with specified mass and moment of \
+inertia.\
+\>", "Text",ExpressionUUID->"937a793e-d7c0-4dc8-b848-c9b2128b827a"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"AddBody", "[", 
+   RowBox[{"pelv", ",", "sta", ",", "Fixed", ",", 
+    RowBox[{"Mass", "->", "Mp"}], ",", 
+    RowBox[{"Inertia", "->", 
+     RowBox[{"{", 
+      RowBox[{"0", ",", "0", ",", "0"}], "}"}]}], ",", 
+    RowBox[{"InbToJnt", "->", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "C"}], ")"}], 
+      RowBox[{"sta", "[", "2", "]"}]}]}], ",", 
+    RowBox[{"BodyToJnt", "->", "0"}]}], "]"}], ";"}]], "Input",ExpressionUUID-\
+>"2adf33eb-5ec6-46dd-aff0-28763b62b42e"],
+
+Cell["\<\
+Finally, add the swing leg to the pelvis. By default, most angles are defined \
+relative to the previous body (joint angles). The RelativeTo is used to make \
+the angle absolute.\
+\>", "Text",ExpressionUUID->"7de8cf08-b49e-46b8-8ef0-ab0b62113888"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"AddBody", "[", 
+   RowBox[{"swi", ",", "pelv", ",", "Hinge", ",", 
+    RowBox[{"RelativeTo", "->", "ground"}], ",", 
+    RowBox[{"Axis", "->", 
+     RowBox[{"pelv", "[", "3", "]"}]}], ",", 
+    RowBox[{"Inertia", "->", 
+     RowBox[{"{", 
+      RowBox[{"0", ",", "0", ",", "Il"}], "}"}]}], ",", 
+    RowBox[{"Mass", "->", "M"}], ",", 
+    RowBox[{"InbToJnt", "->", "0"}], ",", 
+    RowBox[{"BodyToJnt", "->", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "C"}], ")"}], 
+      RowBox[{"swi", "[", "2", "]"}]}]}]}], "]"}], ";"}]], "Input",ExpressionU\
+UID->"fcd0f4e1-0df7-4dfe-91cb-754d47b22d6c"],
+
+Cell["\<\
+Apply gravitational forces to each body, at the center of mass. The 0 is the \
+location of the force relative to c.o.m.\
+\>", "Text",ExpressionUUID->"0d5cb852-d556-468a-ab42-8a5bf114287c"],
+
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"AppFrc", "[", 
+   RowBox[{"sta", ",", 
+    RowBox[{
+     RowBox[{"Mass", "[", "sta", "]"}], " ", "grav"}], ",", "0"}], "]"}], 
+  ";"}], "\n", 
+ RowBox[{
+  RowBox[{"AppFrc", "[", 
+   RowBox[{"pelv", ",", 
+    RowBox[{
+     RowBox[{"Mass", "[", "pelv", "]"}], " ", "grav"}], ",", " ", "0"}], 
+   "]"}], ";"}], "\n", 
+ RowBox[{
+  RowBox[{"AppFrc", "[", 
+   RowBox[{"swi", ",", 
+    RowBox[{
+     RowBox[{"Mass", "[", "swi", "]"}], " ", "grav"}], ",", "0"}], "]"}], 
+  ";"}]}], "Input",ExpressionUUID->"066c65a4-ec9c-48f5-9a4a-6b0090e7c608"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"grav", "=", 
+   RowBox[{"g", " ", 
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"-", 
+        RowBox[{"Cos", "[", "gamma", "]"}]}], " ", 
+       RowBox[{"ground", "[", "2", "]"}]}], "+", 
+      RowBox[{
+       RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+       RowBox[{"ground", "[", "1", "]"}]}]}], ")"}]}]}], ";"}]], "Input",
+ AspectRatioFixed->
+  True,ExpressionUUID->"ede2948c-09fe-448a-b3ae-3973bfd8b4f8"],
+
+Cell["Generate the equations of motion", "Text",ExpressionUUID->"d1105297-bc6f-488d-84e6-3c05a406deee"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"eom", " ", "=", " ", 
+  RowBox[{"EOM", "[", "]"}]}]], "Input",ExpressionUUID->"05ac644c-5175-439f-\
+bf66-211382a4ec37"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{
+    RowBox[{
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"-", "g"}], " ", "M", " ", "R"}], "+", 
+        RowBox[{"g", " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "R"}], ")"}], " ", 
+         RowBox[{"Cos", "[", 
+          SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"-", "g"}], " ", "M", " ", "R"}], "+", 
+        RowBox[{"g", " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+         RowBox[{"Cos", "[", 
+          SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"-", "g"}], " ", "Mp", " ", "R"}], "+", 
+        RowBox[{"g", " ", "Mp", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+         RowBox[{"Cos", "[", 
+          SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}]}], "-", 
+     RowBox[{"g", " ", "M", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "C"}], "+", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", "M", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", "Mp", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M", " ", "R"}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "Mp", " ", "R"}], "+", 
+        RowBox[{"2", " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], " ", "R"}], "+", 
+        RowBox[{"Mp", " ", 
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], " ", "R"}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}], " ", 
+      SubsuperscriptBox["u", "1", "2"]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+         RowBox[{"Sin", "[", 
+          RowBox[{
+           SubscriptBox["q", "1"], "-", 
+           SubscriptBox["q", "2"]}], "]"}]}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", "R", " ", 
+         RowBox[{"Sin", "[", 
+          SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+      SubsuperscriptBox["u", "2", "2"]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "Il"}], "-", 
+        RowBox[{"2", " ", "M", " ", 
+         SuperscriptBox["R", "2"]}], "-", 
+        RowBox[{"Mp", " ", 
+         SuperscriptBox["R", "2"]}], "+", 
+        RowBox[{"M", " ", 
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "R"}], ")"}]}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}]}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "Mp", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}]}], "+", 
+        RowBox[{"M", " ", 
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}]}], "+", 
+        RowBox[{"Mp", " ", 
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}]}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", "R"}], "+", 
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{"C", "-", "L"}], ")"}], " ", "Mp", " ", "R"}], "-", 
+           RowBox[{"2", " ", "M", " ", 
+            RowBox[{"(", 
+             RowBox[{"C", "-", "R"}], ")"}], " ", "R"}], "-", 
+           RowBox[{"Mp", " ", 
+            RowBox[{"(", 
+             RowBox[{"C", "-", "R"}], ")"}], " ", "R"}], "+", 
+           RowBox[{"M", " ", "R", " ", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "R"}], ")"}]}], "+", 
+           RowBox[{"M", " ", "R", " ", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "L"}], "+", "R"}], ")"}]}], "+", 
+           RowBox[{"Mp", " ", "R", " ", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "L"}], "+", "R"}], ")"}]}]}], ")"}], " ", 
+         RowBox[{"Cos", "[", 
+          SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+      SubsuperscriptBox["u", "1", "\[Prime]",
+       MultilineFunction->None]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+         RowBox[{"Cos", "[", 
+          RowBox[{
+           SubscriptBox["q", "1"], "-", 
+           SubscriptBox["q", "2"]}], "]"}]}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M", " ", "R", " ", 
+         RowBox[{"Cos", "[", 
+          SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+      SubsuperscriptBox["u", "2", "\[Prime]",
+       MultilineFunction->None]}]}], "==", "0"}], ",", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M", " ", 
+      RowBox[{"Sin", "[", 
+       RowBox[{"gamma", "-", 
+        SubscriptBox["q", "2"]}], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"-", 
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"-", "C"}], "+", "L"}], ")"}], "2"]}], " ", "M"}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}]}]}], ")"}], " ", 
+      RowBox[{"Sin", "[", 
+       RowBox[{
+        SubscriptBox["q", "1"], "-", 
+        SubscriptBox["q", "2"]}], "]"}], " ", 
+      SubsuperscriptBox["u", "1", "2"]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{
+            SuperscriptBox[
+             RowBox[{"(", 
+              RowBox[{
+               RowBox[{"-", "C"}], "+", "L"}], ")"}], "2"], " ", "M"}], "+", 
+           RowBox[{
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M", " ", 
+            RowBox[{"(", 
+             RowBox[{"C", "-", "R"}], ")"}]}]}], ")"}], " ", 
+         RowBox[{"Cos", "[", 
+          RowBox[{
+           SubscriptBox["q", "1"], "-", 
+           SubscriptBox["q", "2"]}], "]"}]}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M", " ", "R", " ", 
+         RowBox[{"Cos", "[", 
+          SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+      SubsuperscriptBox["u", "1", "\[Prime]",
+       MultilineFunction->None]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "Il"}], "+", 
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"C", "-", "L"}], ")"}], " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", "M"}]}], ")"}], " ", 
+      SubsuperscriptBox["u", "2", "\[Prime]",
+       MultilineFunction->None]}]}], "==", "0"}]}], "}"}]], "Output",Expressio\
+nUUID->"d4d2174a-f787-433e-9330-ef5ce7f2bf2c"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Energy", "Subsection",ExpressionUUID->"1ad3d039-9b05-4a22-a279-62dfc8a4f337"],
+
+Cell["Here are the potential and kinetic energies of the system", "Text",ExpressionUUID->"049be7f3-ee64-4c5f-b6d1-9d1cc0b482cc"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"PE", "=", 
+  RowBox[{"-", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"Mass", "[", "sta", "]"}], " ", 
+      RowBox[{"grav", ".", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"PosCOM", "[", "sta", "]"}], "-", 
+         RowBox[{"R", " ", 
+          RowBox[{"q", "[", "1", "]"}], " ", 
+          RowBox[{"ground", "[", "1", "]"}]}]}], ")"}]}]}], "+", 
+     RowBox[{
+      RowBox[{"Mass", "[", "swi", "]"}], " ", 
+      RowBox[{"grav", ".", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"PosCOM", "[", "swi", "]"}], "-", 
+         RowBox[{"R", " ", 
+          RowBox[{"q", "[", "1", "]"}], " ", 
+          RowBox[{"ground", "[", "1", "]"}]}]}], ")"}]}]}], "+", 
+     RowBox[{
+      RowBox[{"Mass", "[", "pelv", "]"}], " ", 
+      RowBox[{"grav", ".", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"PosCOM", "[", "pelv", "]"}], "-", 
+         RowBox[{"R", " ", 
+          RowBox[{"q", "[", "1", "]"}], " ", 
+          RowBox[{"ground", "[", "1", "]"}]}]}], ")"}]}]}]}], 
+    ")"}]}]}]], "Input",
+ AspectRatioFixed->
+  True,ExpressionUUID->"0ba4305f-1637-4ff4-8985-bb97d0e1da4a"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"-", "M"}], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "g"}], " ", "R", " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"C", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"C", "-", "R"}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", "R", " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      SubscriptBox["q", "1"]}]}], ")"}]}], "-", 
+  RowBox[{"Mp", " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "g"}], " ", "R", " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", "R", " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      SubscriptBox["q", "1"]}]}], ")"}]}], "-", 
+  RowBox[{"M", " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"-", "g"}], " ", "R", " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"C", "-", "L"}], ")"}], " ", 
+      RowBox[{"Cos", "[", "gamma", "]"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "-", 
+     RowBox[{"g", " ", 
+      RowBox[{"(", 
+       RowBox[{"C", "-", "L"}], ")"}], " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      RowBox[{"Sin", "[", 
+       SubscriptBox["q", "2"], "]"}]}], "-", 
+     RowBox[{"g", " ", "R", " ", 
+      RowBox[{"Sin", "[", "gamma", "]"}], " ", 
+      SubscriptBox["q", "1"]}]}], ")"}]}]}]], "Output",ExpressionUUID->\
+"9268ad86-8b2b-4af8-971c-8b8b1c7ef3c5"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"KE", "=", 
+  RowBox[{
+   FractionBox["1", "2"], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"Mass", "[", "sta", "]"}], " ", 
+      RowBox[{
+       RowBox[{"VelCOM", "[", "sta", "]"}], ".", 
+       RowBox[{"VelCOM", "[", "sta", "]"}]}]}], "+", 
+     RowBox[{
+      RowBox[{"Mass", "[", "swi", "]"}], " ", 
+      RowBox[{
+       RowBox[{"VelCOM", "[", "swi", "]"}], ".", 
+       RowBox[{"VelCOM", "[", "swi", "]"}]}]}], "+", 
+     RowBox[{
+      RowBox[{"Mass", "[", "pelv", "]"}], " ", 
+      RowBox[{
+       RowBox[{"VelCOM", "[", "pelv", "]"}], ".", 
+       RowBox[{"VelCOM", "[", "pelv", "]"}]}]}], "+", 
+     RowBox[{
+      RowBox[{"AngVel", "[", "sta", "]"}], ".", 
+      RowBox[{"Inertia", "[", "sta", "]"}], ".", 
+      RowBox[{"AngVel", "[", "sta", "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"AngVel", "[", "swi", "]"}], ".", 
+      RowBox[{"Inertia", "[", "swi", "]"}], ".", 
+      RowBox[{"AngVel", "[", "swi", "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"AngVel", "[", "pelv", "]"}], ".", 
+      RowBox[{"Inertia", "[", "pelv", "]"}], ".", 
+      RowBox[{"AngVel", "[", "pelv", "]"}]}]}], ")"}]}]}]], "Input",
+ AspectRatioFixed->
+  True,ExpressionUUID->"600cf4fa-2dd1-4946-8500-098edc9e79a5"],
+
+Cell[BoxData[
+ RowBox[{
+  FractionBox["1", "2"], " ", 
+  RowBox[{"(", 
+   RowBox[{
+    RowBox[{"Il", " ", 
+     SubsuperscriptBox["u", "1", "2"]}], "+", 
+    RowBox[{"M", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{"C", "-", "R"}], ")"}], "2"], " ", 
+        SubsuperscriptBox["u", "1", "2"]}], "+", 
+       RowBox[{
+        SuperscriptBox["R", "2"], " ", 
+        SubsuperscriptBox["u", "1", "2"]}], "+", 
+       RowBox[{"2", " ", 
+        RowBox[{"(", 
+         RowBox[{"C", "-", "R"}], ")"}], " ", "R", " ", 
+        RowBox[{"Cos", "[", 
+         SubscriptBox["q", "1"], "]"}], " ", 
+        SubsuperscriptBox["u", "1", "2"]}]}], ")"}]}], "+", 
+    RowBox[{"Mp", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{
+        SuperscriptBox["R", "2"], " ", 
+        SubsuperscriptBox["u", "1", "2"]}], "-", 
+       RowBox[{"2", " ", "R", " ", 
+        RowBox[{"Cos", "[", 
+         SubscriptBox["q", "1"], "]"}], " ", 
+        SubscriptBox["u", "1"], " ", 
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "L"}], ")"}]}], " ", 
+           SubscriptBox["u", "1"]}], "-", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"C", "-", "R"}], ")"}], " ", 
+           SubscriptBox["u", "1"]}]}], ")"}]}], "+", 
+       SuperscriptBox[
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "L"}], ")"}]}], " ", 
+           SubscriptBox["u", "1"]}], "-", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"C", "-", "R"}], ")"}], " ", 
+           SubscriptBox["u", "1"]}]}], ")"}], "2"]}], ")"}]}], "+", 
+    RowBox[{"Il", " ", 
+     SubsuperscriptBox["u", "2", "2"]}], "+", 
+    RowBox[{"M", " ", 
+     RowBox[{"(", 
+      RowBox[{
+       RowBox[{
+        SuperscriptBox["R", "2"], " ", 
+        SubsuperscriptBox["u", "1", "2"]}], "-", 
+       RowBox[{"2", " ", "R", " ", 
+        RowBox[{"Cos", "[", 
+         SubscriptBox["q", "1"], "]"}], " ", 
+        SubscriptBox["u", "1"], " ", 
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "L"}], ")"}]}], " ", 
+           SubscriptBox["u", "1"]}], "-", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"C", "-", "R"}], ")"}], " ", 
+           SubscriptBox["u", "1"]}]}], ")"}]}], "+", 
+       SuperscriptBox[
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "L"}], ")"}]}], " ", 
+           SubscriptBox["u", "1"]}], "-", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"C", "-", "R"}], ")"}], " ", 
+           SubscriptBox["u", "1"]}]}], ")"}], "2"], "+", 
+       RowBox[{"2", " ", 
+        RowBox[{"(", 
+         RowBox[{"C", "-", "L"}], ")"}], " ", "R", " ", 
+        RowBox[{"Cos", "[", 
+         SubscriptBox["q", "2"], "]"}], " ", 
+        SubscriptBox["u", "1"], " ", 
+        SubscriptBox["u", "2"]}], "-", 
+       RowBox[{"2", " ", 
+        RowBox[{"(", 
+         RowBox[{"C", "-", "L"}], ")"}], " ", 
+        RowBox[{"Cos", "[", 
+         RowBox[{
+          SubscriptBox["q", "1"], "-", 
+          SubscriptBox["q", "2"]}], "]"}], " ", 
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"-", 
+            RowBox[{"(", 
+             RowBox[{
+              RowBox[{"-", "C"}], "+", "L"}], ")"}]}], " ", 
+           SubscriptBox["u", "1"]}], "-", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{"C", "-", "R"}], ")"}], " ", 
+           SubscriptBox["u", "1"]}]}], ")"}], " ", 
+        SubscriptBox["u", "2"]}], "+", 
+       RowBox[{
+        SuperscriptBox[
+         RowBox[{"(", 
+          RowBox[{"C", "-", "L"}], ")"}], "2"], " ", 
+        SubsuperscriptBox["u", "2", "2"]}]}], ")"}]}]}], ")"}]}]], "Output",Ex\
+pressionUUID->"62992fb5-ec0e-4296-855a-2d3386d036c6"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Contact Point", "Subsection",ExpressionUUID->"71b4b5d0-e628-4716-a57f-4c097f5e6019"],
+
+Cell["Pnt2 is the location of the point right under the swing foot", "Text",ExpressionUUID->"74500507-3207-4d4d-9663-03ff8c816813"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Pnt2", "=", 
+  RowBox[{
+   RowBox[{"PosPnt", "[", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"R", "-", "C"}], ")"}], 
+      RowBox[{"swi", "[", "2", "]"}]}], ",", "swi"}], "]"}], "-", 
+   RowBox[{"R", " ", 
+    RowBox[{"ground", "[", "2", "]"}]}]}]}]], "Input",ExpressionUUID->\
+"ee684296-3f9c-462d-b812-f2ea31467bca"],
+
+Cell[BoxData[
+ RowBox[{
+  TagBox[
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{"L", "-", "R"}], ")"}], " ", 
+    SubscriptBox[
+     UnderscriptBox["sta", "_"], "2"]}],
+   HoldForm], "+", 
+  TagBox[
+   RowBox[{
+    RowBox[{"(", 
+     RowBox[{
+      RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+    SubscriptBox[
+     UnderscriptBox["swi", "_"], "2"]}],
+   HoldForm]}]], "Output",ExpressionUUID->"3610ec7d-ca90-42eb-874e-\
+68b065b111d8"]
+}, Open  ]],
+
+Cell["This is the height of that point above the ground", "Text",ExpressionUUID->"5a35c454-248a-4229-bb03-cabc32529cbc"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"height", " ", "=", " ", 
+  RowBox[{"Pnt2", ".", 
+   RowBox[{"ground", "[", "2", "]"}]}]}]], "Input",ExpressionUUID->"e7fc19fe-\
+3568-4cd0-97e8-d87062267b2c"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R"}], ")"}], " ", 
+   RowBox[{"Cos", "[", 
+    SubscriptBox["q", "1"], "]"}]}], "+", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", "L"}], "+", "R"}], ")"}], " ", 
+   RowBox[{"Cos", "[", 
+    SubscriptBox["q", "2"], "]"}]}]}]], "Output",ExpressionUUID->"4e0665d0-\
+76ab-4d5a-b035-68a6666790f5"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Angular Momentum Calculations", "Subsection",ExpressionUUID->"5a7e8a9d-d91d-4396-a681-a24bec41a7bb"],
+
+Cell[CellGroupData[{
+
+Cell["Of whole machine", "Subsubsection",ExpressionUUID->"f806b0d2-3948-4018-bc42-70a90c6aa2cc"],
+
+Cell["\<\
+Angular momentum of the whole machine right before impact. The command asks \
+for the angular momentum of the specified bodies about Pnt2, which was \
+previously defined to be the point right under the swing leg.\
+\>", "Text",ExpressionUUID->"e0d82a11-6c4a-4fd7-9f4f-24ccc389140f"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"amb", "=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"AngMom", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"sta", ",", "pelv", ",", "swi"}], "}"}], ",", "Pnt2"}], "]"}], 
+    ".", 
+    RowBox[{"ground", "[", "3", "]"}]}], " ", "//", "Simplify"}]}]], "Input",E\
+xpressionUUID->"5c7073ae-b9d1-4e47-835d-941d3b675f69"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Il", " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", 
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R"}], ")"}], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"C", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{
+        SubscriptBox["q", "1"], "-", 
+        SubscriptBox["q", "2"]}], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Mp", " ", 
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R"}], ")"}], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{
+        SubscriptBox["q", "1"], "-", 
+        SubscriptBox["q", "2"]}], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", 
+   RowBox[{"(", 
+    RowBox[{"C", "-", "R"}], ")"}], " ", 
+   RowBox[{"(", 
+    RowBox[{"C", "-", "L", "+", 
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{
+        SubscriptBox["q", "1"], "-", 
+        SubscriptBox["q", "2"]}], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", "R", " ", 
+   RowBox[{"(", 
+    RowBox[{"R", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"C", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Mp", " ", "R", " ", 
+   RowBox[{"(", 
+    RowBox[{"R", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", "R", " ", 
+   RowBox[{"(", 
+    RowBox[{"R", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"C", "-", "L"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Il", " ", 
+   SubscriptBox["u", "2"]}], "+", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+   RowBox[{"(", 
+    RowBox[{"C", "-", "R", "+", 
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "2"]}]}]], "Output",ExpressionUUID->"5e05bbd6-86dd-4bb8-\
+aeaf-685ea018298f"]
+}, Open  ]],
+
+Cell["\<\
+Angular momentum of the whole machine right after impact. Right after impact, \
+the old swing leg is now called the stance leg. To find the angular momentum \
+about the same point as before, we now have to ask for the point right under \
+the new stance leg.\
+\>", "Text",ExpressionUUID->"10b4dfc3-a23a-4ed6-88a0-92aed4aed858"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ama", "=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"AngMom", "[", 
+     RowBox[{
+      RowBox[{"{", 
+       RowBox[{"sta", ",", "pelv", ",", "swi"}], "}"}], ",", "0"}], "]"}], 
+    ".", 
+    RowBox[{"ground", "[", "3", "]"}]}], " ", "//", "Simplify"}]}]], "Input",
+ AspectRatioFixed->
+  True,ExpressionUUID->"c3d6a796-e3e2-4f1c-95cb-2845b33d24cb"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"Il", " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", "R", " ", 
+   RowBox[{"(", 
+    RowBox[{"R", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"C", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Mp", " ", "R", " ", 
+   RowBox[{"(", 
+    RowBox[{"R", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", 
+   RowBox[{"(", 
+    RowBox[{"C", "-", "R"}], ")"}], " ", 
+   RowBox[{"(", 
+    RowBox[{"C", "-", "R", "+", 
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Mp", " ", 
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R"}], ")"}], " ", 
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R", "+", 
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "-", 
+  RowBox[{"M", " ", 
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R"}], ")"}], " ", 
+   RowBox[{"(", 
+    RowBox[{
+     RowBox[{"-", "L"}], "+", "R", "-", 
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"-", "C"}], "+", "L"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{
+        SubscriptBox["q", "1"], "-", 
+        SubscriptBox["q", "2"]}], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"M", " ", "R", " ", 
+   RowBox[{"(", 
+    RowBox[{"R", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "1"], "]"}]}], "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"C", "-", "L"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Il", " ", 
+   SubscriptBox["u", "2"]}], "+", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+   RowBox[{"(", 
+    RowBox[{"C", "-", "L", "+", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"L", "-", "R"}], ")"}], " ", 
+      RowBox[{"Cos", "[", 
+       RowBox[{
+        SubscriptBox["q", "1"], "-", 
+        SubscriptBox["q", "2"]}], "]"}]}], "+", 
+     RowBox[{"R", " ", 
+      RowBox[{"Cos", "[", 
+       SubscriptBox["q", "2"], "]"}]}]}], ")"}], " ", 
+   SubscriptBox["u", "2"]}]}]], "Output",ExpressionUUID->"12c0b62d-0bfb-4658-\
+bd59-ff36a8cdd168"]
+}, Open  ]],
+
+Cell["\<\
+The two angular momenta above should be equal. The angular momentum before \
+impact, amb, is computed from the state of the system immediately before \
+impact. The angular momentum after impact is given in terms of the new state \
+of the system.\
+\>", "Text",ExpressionUUID->"f78a3a0c-fbc4-4b3d-a995-bde44a8323ad"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Of trailing leg about the hip", "Subsubsection",ExpressionUUID->"78498525-1380-4cee-83f8-46e2fd85d7f3"],
+
+Cell["\<\
+Angular momentum of the trailing leg about the hip, right before impact. The \
+command asks for the angular momentum of the stance leg (which is the \
+trailing leg before impact), about the hip (specified as a vector from the \
+stance leg center of mass to the pelvis).\
+\>", "Text",ExpressionUUID->"6da6320c-4251-4d4f-bc04-8fc078ac5b80"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"amb2", "=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"AngMom", "[", 
+     RowBox[{"sta", ",", 
+      RowBox[{"PosPnt", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"L", "-", "C"}], ")"}], 
+         RowBox[{"sta", "[", "2", "]"}]}], ",", "sta"}], "]"}]}], "]"}], ".", 
+    RowBox[{"ground", "[", "3", "]"}]}], " ", "//", "Simplify"}]}]], "Input",E\
+xpressionUUID->"f4d0b321-fb61-4847-845a-252c619e4c67"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(", 
+   RowBox[{"Il", "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+     RowBox[{"(", 
+      RowBox[{"C", "-", "R"}], ")"}]}], "+", 
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", "R", " ", 
+     RowBox[{"Cos", "[", 
+      SubscriptBox["q", "1"], "]"}]}]}], ")"}], " ", 
+  SubscriptBox["u", "1"]}]], "Output",ExpressionUUID->"870ecf8f-541e-4c79-\
+9100-a7b79433a8a0"]
+}, Open  ]],
+
+Cell["\<\
+Angular momentum of the trailing leg about the hip, right after impact. Note \
+that after impact the trailing leg is now called the swing leg, and the hip \
+is now specified as a point from the center of mass of the swing leg. Note \
+that instead of PosPnt[...] shown, another exactly equivalent vector is \
+PosCOM[pelv]. Note also that all of the items in this new equation are in \
+terms of the state of the system after impact.\
+\>", "Text",ExpressionUUID->"c1a5c2d3-f02f-446f-9199-ae50cf72c27d"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ama2", "=", 
+  RowBox[{
+   RowBox[{
+    RowBox[{"AngMom", "[", 
+     RowBox[{"swi", ",", 
+      RowBox[{"PosPnt", "[", 
+       RowBox[{
+        RowBox[{
+         RowBox[{"(", 
+          RowBox[{"L", "-", "C"}], ")"}], 
+         RowBox[{"swi", "[", "2", "]"}]}], ",", "swi"}], "]"}]}], "]"}], ".", 
+    RowBox[{"ground", "[", "3", "]"}]}], " ", "//", "Simplify"}]}]], "Input",E\
+xpressionUUID->"2d93d510-afbc-420b-a471-234777ac38ff"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", 
+   RowBox[{"(", 
+    RowBox[{"L", "-", "R"}], ")"}], " ", 
+   RowBox[{"Cos", "[", 
+    RowBox[{
+     SubscriptBox["q", "1"], "-", 
+     SubscriptBox["q", "2"]}], "]"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{
+   RowBox[{"(", 
+    RowBox[{"C", "-", "L"}], ")"}], " ", "M", " ", "R", " ", 
+   RowBox[{"Cos", "[", 
+    SubscriptBox["q", "2"], "]"}], " ", 
+   SubscriptBox["u", "1"]}], "+", 
+  RowBox[{"Il", " ", 
+   SubscriptBox["u", "2"]}], "+", 
+  RowBox[{
+   SuperscriptBox[
+    RowBox[{"(", 
+     RowBox[{"C", "-", "L"}], ")"}], "2"], " ", "M", " ", 
+   SubscriptBox["u", "2"]}]}]], "Output",ExpressionUUID->"6ab906b7-4b05-46d4-\
+bbf9-5ca8b487d4a7"]
+}, Open  ]]
+}, Open  ]],
+
+Cell["\<\
+Here is how to use these equations. ama and ama2 are two expressions that are \
+linear in the unknowns u1 and u2 (after impact). amb and amb2 are two \
+expressions that depend on the state before impact, and are known. By setting \
+{ama,ama2}=={amb,amb2}, you can solve for u1 and u2 (after impact).\
+\>", "Text",ExpressionUUID->"95709f9c-c887-4982-ae6f-bd31c684bea8"]
+}, Open  ]]
+},
+Evaluator->"Local",
+CellGrouping->Manual,
+WindowSize->{947, 1105},
+WindowMargins->{{31, Automatic}, {Automatic, 11}},
+PrintingCopies->1,
+PrintingPageRange->{1, Automatic},
+FrontEndVersion->"11.3 for Mac OS X x86 (32-bit, 64-bit Kernel) (March 5, \
+2018)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[545, 20, 178, 3, 98, "Title",ExpressionUUID->"f1dbaf60-66e6-4d95-993c-a6ad6d8463e2"],
+Cell[726, 25, 118, 0, 31, "Subsubtitle",ExpressionUUID->"e61bdc07-da12-4a64-bc44-d61af29606cf"],
+Cell[CellGroupData[{
+Cell[869, 29, 91, 0, 54, "Subsection",ExpressionUUID->"df71ce42-db1f-4858-897a-41c76dd38a07"],
+Cell[963, 31, 140, 2, 30, "Input",ExpressionUUID->"20775239-667d-4356-a865-3b939a3d4150"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1140, 38, 96, 0, 54, "Subsection",ExpressionUUID->"bccb1bc4-016b-4f3f-ac17-892e7e57abf2"],
+Cell[1239, 40, 187, 3, 35, "Text",ExpressionUUID->"dc0396ac-35ff-4961-a759-db1bab4c5e91"],
+Cell[1429, 45, 585, 8, 104, "Text",ExpressionUUID->"2e79acd1-d4b0-42b7-9eb1-f07607340284"],
+Cell[2017, 55, 797, 22, 73, "Input",ExpressionUUID->"92ce9bde-fb51-411e-9f73-e5f2b37e6c39"],
+Cell[2817, 79, 422, 6, 81, "Text",ExpressionUUID->"018e1e87-69dc-4eb3-a4ad-88f6959ee963"],
+Cell[3242, 87, 940, 27, 52, "Input",ExpressionUUID->"f2b10476-bcef-4bd6-a77e-e6b8b18b3fac"],
+Cell[4185, 116, 161, 3, 35, "Text",ExpressionUUID->"937a793e-d7c0-4dc8-b848-c9b2128b827a"],
+Cell[4349, 121, 520, 14, 30, "Input",ExpressionUUID->"2adf33eb-5ec6-46dd-aff0-28763b62b42e"],
+Cell[4872, 137, 257, 4, 58, "Text",ExpressionUUID->"7de8cf08-b49e-46b8-8ef0-ab0b62113888"],
+Cell[5132, 143, 643, 17, 52, "Input",ExpressionUUID->"fcd0f4e1-0df7-4dfe-91cb-754d47b22d6c"],
+Cell[5778, 162, 198, 3, 35, "Text",ExpressionUUID->"0d5cb852-d556-468a-ab42-8a5bf114287c"],
+Cell[5979, 167, 573, 18, 73, "Input",ExpressionUUID->"066c65a4-ec9c-48f5-9a4a-6b0090e7c608"],
+Cell[6555, 187, 460, 14, 30, "Input",ExpressionUUID->"ede2948c-09fe-448a-b3ae-3973bfd8b4f8"],
+Cell[7018, 203, 103, 0, 35, "Text",ExpressionUUID->"d1105297-bc6f-488d-84e6-3c05a406deee"],
+Cell[CellGroupData[{
+Cell[7146, 207, 143, 3, 30, "Input",ExpressionUUID->"05ac644c-5175-439f-bf66-211382a4ec37"],
+Cell[7292, 212, 8757, 262, 215, "Output",ExpressionUUID->"d4d2174a-f787-433e-9330-ef5ce7f2bf2c"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[16098, 480, 83, 0, 54, "Subsection",ExpressionUUID->"1ad3d039-9b05-4a22-a279-62dfc8a4f337"],
+Cell[16184, 482, 128, 0, 35, "Text",ExpressionUUID->"049be7f3-ee64-4c5f-b6d1-9d1cc0b482cc"],
+Cell[CellGroupData[{
+Cell[16337, 486, 1144, 34, 73, "Input",ExpressionUUID->"0ba4305f-1637-4ff4-8985-bb97d0e1da4a"],
+Cell[17484, 522, 2651, 78, 98, "Output",ExpressionUUID->"9268ad86-8b2b-4af8-971c-8b8b1c7ef3c5"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[20172, 605, 1245, 34, 111, "Input",ExpressionUUID->"600cf4fa-2dd1-4946-8500-098edc9e79a5"],
+Cell[21420, 641, 4183, 128, 120, "Output",ExpressionUUID->"62992fb5-ec0e-4296-855a-2d3386d036c6"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[25652, 775, 90, 0, 54, "Subsection",ExpressionUUID->"71b4b5d0-e628-4716-a57f-4c097f5e6019"],
+Cell[25745, 777, 131, 0, 35, "Text",ExpressionUUID->"74500507-3207-4d4d-9663-03ff8c816813"],
+Cell[CellGroupData[{
+Cell[25901, 781, 362, 11, 30, "Input",ExpressionUUID->"ee684296-3f9c-462d-b812-f2ea31467bca"],
+Cell[26266, 794, 433, 17, 37, "Output",ExpressionUUID->"3610ec7d-ca90-42eb-874e-68b065b111d8"]
+}, Open  ]],
+Cell[26714, 814, 120, 0, 35, "Text",ExpressionUUID->"5a35c454-248a-4229-bb03-cabc32529cbc"],
+Cell[CellGroupData[{
+Cell[26859, 818, 181, 4, 30, "Input",ExpressionUUID->"e7fc19fe-3568-4cd0-97e8-d87062267b2c"],
+Cell[27043, 824, 382, 13, 34, "Output",ExpressionUUID->"4e0665d0-76ab-4d5a-b035-68a6666790f5"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[27474, 843, 106, 0, 54, "Subsection",ExpressionUUID->"5a7e8a9d-d91d-4396-a681-a24bec41a7bb"],
+Cell[CellGroupData[{
+Cell[27605, 847, 96, 0, 45, "Subsubsection",ExpressionUUID->"f806b0d2-3948-4018-bc42-70a90c6aa2cc"],
+Cell[27704, 849, 291, 4, 58, "Text",ExpressionUUID->"e0d82a11-6c4a-4fd7-9f4f-24ccc389140f"],
+Cell[CellGroupData[{
+Cell[28020, 857, 344, 10, 30, "Input",ExpressionUUID->"5c7073ae-b9d1-4e47-835d-941d3b675f69"],
+Cell[28367, 869, 2827, 95, 77, "Output",ExpressionUUID->"5e05bbd6-86dd-4bb8-aeaf-685ea018298f"]
+}, Open  ]],
+Cell[31209, 967, 336, 5, 58, "Text",ExpressionUUID->"10b4dfc3-a23a-4ed6-88a0-92aed4aed858"],
+Cell[CellGroupData[{
+Cell[31570, 976, 367, 11, 30, "Input",ExpressionUUID->"c3d6a796-e3e2-4f1c-95cb-2845b33d24cb"],
+Cell[31940, 989, 2703, 90, 77, "Output",ExpressionUUID->"12c0b62d-0bfb-4658-bd59-ff36a8cdd168"]
+}, Open  ]],
+Cell[34658, 1082, 324, 5, 58, "Text",ExpressionUUID->"f78a3a0c-fbc4-4b3d-a995-bde44a8323ad"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[35019, 1092, 109, 0, 45, "Subsubsection",ExpressionUUID->"78498525-1380-4cee-83f8-46e2fd85d7f3"],
+Cell[35131, 1094, 348, 5, 81, "Text",ExpressionUUID->"6da6320c-4251-4d4f-bc04-8fc078ac5b80"],
+Cell[CellGroupData[{
+Cell[35504, 1103, 456, 13, 30, "Input",ExpressionUUID->"f4d0b321-fb61-4847-845a-252c619e4c67"],
+Cell[35963, 1118, 485, 15, 34, "Output",ExpressionUUID->"870ecf8f-541e-4c79-9100-a7b79433a8a0"]
+}, Open  ]],
+Cell[36463, 1136, 509, 7, 104, "Text",ExpressionUUID->"c1a5c2d3-f02f-446f-9199-ae50cf72c27d"],
+Cell[CellGroupData[{
+Cell[36997, 1147, 456, 13, 30, "Input",ExpressionUUID->"2d93d510-afbc-420b-a471-234777ac38ff"],
+Cell[37456, 1162, 766, 25, 34, "Output",ExpressionUUID->"6ab906b7-4b05-46d4-bbf9-5ca8b487d4a7"]
+}, Open  ]]
+}, Open  ]],
+Cell[38249, 1191, 378, 5, 81, "Text",ExpressionUUID->"95709f9c-c887-4982-ae6f-bd31c684bea8"]
+}, Open  ]]
+}
+]
+*)
+
